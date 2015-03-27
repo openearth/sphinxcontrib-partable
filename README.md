@@ -34,4 +34,7 @@ Supported properties to describe a parameter are currently:
 
 Parameter tables can be referenced using individual parameters with the *par* role:
 
-    The user can limit the maximum bed level change due to avalanching using the keyword :par:`dzmax`.
+    The user can limit the maximum bed level change due
+    to avalanching using the keyword :par:`dzmax`. Avalanching
+    occurs if the bedslope exceeds the critical slope defined
+    by keyword :par:`dryslp`.
