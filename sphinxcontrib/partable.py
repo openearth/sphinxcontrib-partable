@@ -17,7 +17,8 @@ from docutils.statemachine import ViewList
 #        if not has_explicit_title:
 #            title = target
 #
-#        return super(ParRefRole, self).process_link(env, refnode, True, title, 'partable-%s' % target)
+#        return super(ParRefRole, self).process_link(
+#            env, refnode, True, title, 'partable-%s' % target)
 
 
 class ParTableDirective(ListTable):
@@ -25,7 +26,9 @@ class ParTableDirective(ListTable):
     option_spec = {
         'widths': directives.positive_int_list,
         'class': directives.class_option,
-        'name': directives.unchanged
+        'align': directives.unchanged,
+        'name': directives.unchanged,
+        'columns': directives.unchanged
     }
     
     def run(self):
@@ -36,13 +39,18 @@ class ParTableDirective(ListTable):
                 line=self.lineno)
             return [error]
 
+        env = self.state.document.settings.env
+        
         self.ad = make_admonition(partable, self.name, [_('ParTable')], self.options,
                                   self.content, self.lineno, self.content_offset,
                                   self.block_text, self.state, self.state_machine)
 
         title, messages = self.make_title()
 
-        columns = ['parameter', 'description', 'default', 'range', 'units']
+        if 'columns' in self.options:
+            columns = [x.strip() for x in self.options['columns'].split(',')]
+        else:
+            columns = ['parameter', 'description', 'default', 'range', 'units']
         
         table_data = []
 
@@ -53,11 +61,11 @@ class ParTableDirective(ListTable):
             header.append(p)
         table_data.append(header)
 
-        targets = []
+        labels = []
         for item in self.ad[0][1:]:
             for info in item:
                 row = []
-                
+
                 atts = {}
                 for key, val in info[1][0]:
                     atts[key.astext()] = val.astext()
@@ -65,12 +73,13 @@ class ParTableDirective(ListTable):
                 p = nodes.paragraph()
                 par = info[0].astext()
 
-                targets.append('partable-%s' % par)
+                labels.append('partable-%s' % par)
 
-                if atts.has_key('advanced'):
-                    par += '+'
-                if atts.has_key('required'):
-                    par += '*'
+                # parse flags
+                if type(env.config['partable_flags']) is dict:
+                    for flag, sign in env.config['partable_flags'].iteritems():
+                        if atts.has_key(flag):
+                            par += sign
 
                 self.state.nested_parse(ViewList([par], source=par), 0, p)
                 row.append(p)
@@ -93,9 +102,9 @@ class ParTableDirective(ListTable):
         if title:
             table_node.insert(0, title)
 
-        target_node = nodes.target('', '', ids=targets)
+        label_node = nodes.target('', '', ids=labels)
 
-        return [target_node, table_node] + messages
+        return [label_node, table_node] + messages
 
     
     def get_column_widths(self, table_data):
@@ -127,5 +136,9 @@ def partable_role(name, rawtext, text, lineno, inliner, options={}, content=[]):
 
     
 def setup(app):
+    flags = {'advanced':'+',
+             'required':'*'}
+                               
+    app.add_config_value('partable_flags', flags, 'env')
     app.add_directive('partable', ParTableDirective)
     app.add_role('par', partable_role)
