@@ -94,7 +94,7 @@ class ParTableDirective(ListTable):
                 table_data.append(row)
 
         col_widths = self.get_column_widths(table_data)
-        table_node = self.build_table_from_list(table_data, col_widths, 1, 0)
+        table_node = self.build_table_from_list(table_data, None, col_widths, 1, 0)
         table_node['classes'] += self.options.get('class', [])
         
         self.add_name(table_node)
